@@ -1,14 +1,20 @@
 package com.app.fotoparadiesauftragchecker
 
+import android.graphics.Canvas
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.app.fotoparadiesauftragchecker.adapter.OrdersAdapter
 import com.app.fotoparadiesauftragchecker.databinding.ActivityMainBinding
 import com.app.fotoparadiesauftragchecker.databinding.DialogAddOrderBinding
 import com.app.fotoparadiesauftragchecker.viewmodel.OrderViewModel
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 
@@ -32,6 +38,92 @@ class MainActivity : AppCompatActivity() {
     private fun setupRecyclerView() {
         binding.ordersRecyclerView.layoutManager = LinearLayoutManager(this)
         binding.ordersRecyclerView.adapter = adapter
+
+        // Setup swipe to delete
+        val swipeHandler = object : ItemTouchHelper.SimpleCallback(
+            0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
+        ) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean = false
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val position = viewHolder.adapterPosition
+                val order = adapter.currentList[position]
+                
+                // Delete the order
+                viewModel.deleteOrder(order)
+                
+                // Show undo snackbar
+                Snackbar.make(
+                    binding.root,
+                    "Auftrag ${order.orderNumber} gelöscht",
+                    Snackbar.LENGTH_LONG
+                ).setAction("Rückgängig") {
+                    viewModel.addOrder(
+                        order.retailerId.toInt(),
+                        order.orderNumber
+                    )
+                }.show()
+            }
+
+            override fun onChildDraw(
+                canvas: Canvas,
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                dX: Float,
+                dY: Float,
+                actionState: Int,
+                isCurrentlyActive: Boolean
+            ) {
+                val itemView = viewHolder.itemView
+                val deleteIcon = ContextCompat.getDrawable(
+                    this@MainActivity,
+                    R.drawable.ic_delete_24
+                )
+                val iconMargin = (itemView.height - (deleteIcon?.intrinsicHeight ?: 0)) / 2
+                
+                if (dX > 0) { // Swiping to the right
+                    val iconLeft = itemView.left + iconMargin
+                    val iconRight = itemView.left + iconMargin + (deleteIcon?.intrinsicWidth ?: 0)
+                    deleteIcon?.setBounds(iconLeft, itemView.top + iconMargin, iconRight, itemView.bottom - iconMargin)
+                    
+                    val background = ColorDrawable()
+                    background.color = MaterialColors.getColor(itemView, com.google.android.material.R.attr.colorError)
+                    background.setBounds(
+                        itemView.left,
+                        itemView.top,
+                        itemView.left + dX.toInt(),
+                        itemView.bottom
+                    )
+                    
+                    background.draw(canvas)
+                    deleteIcon?.draw(canvas)
+                } else if (dX < 0) { // Swiping to the left
+                    val iconRight = itemView.right - iconMargin
+                    val iconLeft = itemView.right - iconMargin - (deleteIcon?.intrinsicWidth ?: 0)
+                    deleteIcon?.setBounds(iconLeft, itemView.top + iconMargin, iconRight, itemView.bottom - iconMargin)
+                    
+                    val background = ColorDrawable()
+                    background.color = MaterialColors.getColor(itemView, com.google.android.material.R.attr.colorError)
+                    background.setBounds(
+                        itemView.right + dX.toInt(),
+                        itemView.top,
+                        itemView.right,
+                        itemView.bottom
+                    )
+                    
+                    background.draw(canvas)
+                    deleteIcon?.draw(canvas)
+                }
+                
+                super.onChildDraw(canvas, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+            }
+        }
+
+        ItemTouchHelper(swipeHandler).attachToRecyclerView(binding.ordersRecyclerView)
     }
 
     private fun setupFab() {

@@ -93,6 +93,27 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun deleteOrder(order: OrderStatus) {
+        viewModelScope.launch {
+            try {
+                // Remove from LiveData
+                val currentOrders = _orders.value.orEmpty().toMutableList()
+                currentOrders.remove(order)
+                _orders.value = currentOrders
+
+                // Remove from database
+                orderDao.deleteOrder(Order(
+                    orderId = order.orderNumber.toString(),
+                    retailerId = order.retailerId,
+                    status = order.status,
+                    orderName = order.orderName
+                ))
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Fehler beim Löschen des Auftrags"
+            }
+        }
+    }
+
     private fun loadSavedOrders() {
         viewModelScope.launch {
             orderDao.getAllOrders().collectLatest { savedOrders ->
