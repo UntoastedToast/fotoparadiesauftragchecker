@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Canvas
 import android.graphics.drawable.ColorDrawable
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -28,21 +29,26 @@ import com.google.android.material.snackbar.Snackbar
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private val viewModel: OrderViewModel by viewModels()
-    private val adapter = OrdersAdapter()
     private lateinit var notificationService: NotificationService
+    private val adapter = OrdersAdapter()
+    private val viewModel: OrderViewModel by viewModels()
+
+    private val requiredPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        arrayOf(
+            Manifest.permission.POST_NOTIFICATIONS
+        )
+    } else {
+        arrayOf()
+    }
 
     private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            showTestNotification()
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.entries.all { it.value }
+        if (allGranted) {
+            Snackbar.make(binding.root, R.string.permissions_granted, Snackbar.LENGTH_SHORT).show()
         } else {
-            Snackbar.make(
-                binding.root,
-                getString(R.string.notifications_not_allowed),
-                Snackbar.LENGTH_LONG
-            ).show()
+            Snackbar.make(binding.root, R.string.permissions_required, Snackbar.LENGTH_LONG).show()
         }
     }
 
@@ -58,6 +64,8 @@ class MainActivity : AppCompatActivity() {
         setupSwipeRefresh()
         setupFab()
         observeViewModel()
+        
+        checkAndRequestPermissions()
     }
 
     private fun setupRecyclerView() {
@@ -196,25 +204,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun checkNotificationPermission(onGranted: () -> Unit) {
-        when {
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED -> {
-                onGranted()
-            }
-            else -> {
-                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        }
-    }
+    private fun checkAndRequestPermissions() {
+        // Überprüfe alle erforderlichen Berechtigungen
+        val permissionsToRequest = requiredPermissions.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }.toTypedArray()
 
-    private fun showTestNotification() {
-        notificationService.showOrderReadyNotification(
-            orderId = "12345",
-            retailerId = "1320"
-        )
+        // Wenn Berechtigungen fehlen, frage sie an
+        if (permissionsToRequest.isNotEmpty()) {
+            requestPermissionLauncher.launch(permissionsToRequest)
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
