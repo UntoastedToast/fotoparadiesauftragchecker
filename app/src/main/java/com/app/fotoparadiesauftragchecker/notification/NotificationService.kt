@@ -47,14 +47,19 @@ class NotificationService(private val context: Context) {
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification_photo)  // Hier verwenden wir das neue Foto-Icon
             .setContentTitle("Auftrag abholbereit")
-            .setContentText("Ihr Auftrag $orderId kann jetzt in der DM Filiale $retailerId abgeholt werden.")
+            .setContentText("Dein Auftrag $orderId kann jetzt in der DM Filiale $retailerId abgeholt werden.")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .build()
 
-        with(NotificationManagerCompat.from(context)) {
-            notify(orderId.hashCode(), notification)
+        try {
+            NotificationManagerCompat.from(context).apply {
+                notify(orderId.hashCode(), notification)
+            }
+        } catch (e: SecurityException) {
+            // Handle the case where notification permission is not granted
+            e.printStackTrace()
         }
     }
 }
