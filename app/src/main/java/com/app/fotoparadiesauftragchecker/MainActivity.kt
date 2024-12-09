@@ -1,9 +1,14 @@
 package com.app.fotoparadiesauftragchecker
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.Canvas
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -13,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.app.fotoparadiesauftragchecker.adapter.OrdersAdapter
 import com.app.fotoparadiesauftragchecker.databinding.ActivityMainBinding
 import com.app.fotoparadiesauftragchecker.databinding.DialogAddOrderBinding
+import com.app.fotoparadiesauftragchecker.notification.NotificationService
 import com.app.fotoparadiesauftragchecker.viewmodel.OrderViewModel
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -23,12 +29,29 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private val viewModel: OrderViewModel by viewModels()
     private val adapter = OrdersAdapter()
+    private lateinit var notificationService: NotificationService
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            showTestNotification()
+        } else {
+            Snackbar.make(
+                binding.root,
+                "Benachrichtigungen sind nicht erlaubt",
+                Snackbar.LENGTH_LONG
+            ).show()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        notificationService = NotificationService(this)
+        
         setSupportActionBar(binding.toolbar)
         setupRecyclerView()
         setupSwipeRefresh()
@@ -169,6 +192,45 @@ class MainActivity : AppCompatActivity() {
         viewModel.error.observe(this) { error ->
             binding.swipeRefreshLayout.isRefreshing = false
             Snackbar.make(binding.root, error, Snackbar.LENGTH_LONG).show()
+        }
+    }
+
+    private fun checkNotificationPermission(onGranted: () -> Unit) {
+        when {
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                onGranted()
+            }
+            else -> {
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
+    private fun showTestNotification() {
+        notificationService.showOrderReadyNotification(
+            orderId = "12345",
+            retailerId = "1320"
+        )
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_settings -> true
+            R.id.action_test_notification -> {
+                checkNotificationPermission {
+                    showTestNotification()
+                }
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
         }
     }
 }

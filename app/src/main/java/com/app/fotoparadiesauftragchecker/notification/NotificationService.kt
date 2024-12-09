@@ -45,7 +45,7 @@ class NotificationService(private val context: Context) {
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification)
+            .setSmallIcon(R.drawable.ic_notification_photo)  // Hier verwenden wir das neue Foto-Icon
             .setContentTitle("Auftrag abholbereit")
             .setContentText("Ihr Auftrag $orderId kann jetzt in der DM Filiale $retailerId abgeholt werden.")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
