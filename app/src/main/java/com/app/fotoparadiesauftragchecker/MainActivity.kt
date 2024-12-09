@@ -31,6 +31,7 @@ class MainActivity : AppCompatActivity() {
 
         setSupportActionBar(binding.toolbar)
         setupRecyclerView()
+        setupSwipeRefresh()
         setupFab()
         observeViewModel()
     }
@@ -126,6 +127,12 @@ class MainActivity : AppCompatActivity() {
         ItemTouchHelper(swipeHandler).attachToRecyclerView(binding.ordersRecyclerView)
     }
 
+    private fun setupSwipeRefresh() {
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            viewModel.refreshOrders()
+        }
+    }
+
     private fun setupFab() {
         binding.addOrderFab.setOnClickListener {
             showAddOrderDialog()
@@ -156,9 +163,11 @@ class MainActivity : AppCompatActivity() {
     private fun observeViewModel() {
         viewModel.orders.observe(this) { orders ->
             adapter.submitList(orders)
+            binding.swipeRefreshLayout.isRefreshing = false
         }
 
         viewModel.error.observe(this) { error ->
+            binding.swipeRefreshLayout.isRefreshing = false
             Snackbar.make(binding.root, error, Snackbar.LENGTH_LONG).show()
         }
     }
