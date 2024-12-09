@@ -10,5 +10,6 @@ data class Order(
     val status: String,
     val retailerId: String,
     val orderName: String? = null,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val notificationSent: Boolean = false
 )

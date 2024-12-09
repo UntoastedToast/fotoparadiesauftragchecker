@@ -9,6 +9,7 @@ import com.app.fotoparadiesauftragchecker.api.FotoparadiesApi
 import com.app.fotoparadiesauftragchecker.data.AppDatabase
 import com.app.fotoparadiesauftragchecker.data.Order
 import com.app.fotoparadiesauftragchecker.data.OrderStatus
+import com.app.fotoparadiesauftragchecker.notification.NotificationService
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import retrofit2.Retrofit
@@ -23,6 +24,7 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
 
     private val api: FotoparadiesApi
     private val orderDao = AppDatabase.getDatabase(application).orderDao()
+    private val notificationService = NotificationService(application)
 
     init {
         val retrofit = Retrofit.Builder()
@@ -78,14 +80,30 @@ class OrderViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 _orders.value = updatedOrders
 
-                // Update database
+                // Update database and check for notifications
                 updatedOrders.forEach { status ->
+                    val existingOrder = orderDao.getOrderById(status.orderNumber.toString())
+                    val shouldNotify = existingOrder?.let {
+                        !it.notificationSent && 
+                        it.status != "DELIVERED" && 
+                        status.status == "DELIVERED"
+                    } ?: false
+
                     orderDao.insertOrder(Order(
                         orderId = status.orderNumber.toString(),
                         retailerId = status.retailerId,
                         status = status.status,
-                        orderName = status.orderName
+                        orderName = status.orderName,
+                        notificationSent = existingOrder?.notificationSent ?: false || 
+                            (status.status == "DELIVERED")
                     ))
+
+                    if (shouldNotify) {
+                        notificationService.showOrderReadyNotification(
+                            status.orderNumber.toString(),
+                            status.retailerId
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 _error.value = e.message ?: "Ein Fehler ist aufgetreten"
