@@ -40,7 +40,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             Snackbar.make(
                 binding.root,
-                "Benachrichtigungen sind nicht erlaubt",
+                getString(R.string.notifications_not_allowed),
                 Snackbar.LENGTH_LONG
             ).show()
         }
@@ -84,9 +84,9 @@ class MainActivity : AppCompatActivity() {
                 // Show undo snackbar
                 Snackbar.make(
                     binding.root,
-                    "Auftrag ${order.orderNumber} gelöscht",
+                    getString(R.string.order_deleted, order.orderNumber),
                     Snackbar.LENGTH_LONG
-                ).setAction("Rückgängig") {
+                ).setAction(getString(R.string.undo)) {
                     viewModel.addOrder(
                         order.retailerId.toInt(),
                         order.orderNumber
@@ -167,20 +167,20 @@ class MainActivity : AppCompatActivity() {
         val dialogBinding = DialogAddOrderBinding.inflate(LayoutInflater.from(this))
         
         MaterialAlertDialogBuilder(this)
-            .setTitle("Neuen Auftrag hinzufügen")
+            .setTitle(getString(R.string.add_new_order))
             .setView(dialogBinding.root)
-            .setPositiveButton("Hinzufügen") { _, _ ->
+            .setPositiveButton(getString(R.string.add)) { _, _ ->
                 val shop = dialogBinding.shopInput.text.toString().toIntOrNull()
                 val order = dialogBinding.orderInput.text.toString().toIntOrNull()
 
                 if (shop == null || order == null) {
-                    Snackbar.make(binding.root, "Bitte gültige Nummern eingeben", Snackbar.LENGTH_LONG).show()
+                    Snackbar.make(binding.root, getString(R.string.enter_valid_numbers), Snackbar.LENGTH_LONG).show()
                     return@setPositiveButton
                 }
 
                 viewModel.addOrder(shop, order)
             }
-            .setNegativeButton("Abbrechen", null)
+            .setNegativeButton(getString(R.string.cancel), null)
             .show()
     }
 

@@ -29,12 +29,12 @@ class SettingsActivity : AppCompatActivity() {
             prefs.edit().putBoolean("notifications_enabled", true).apply()
             binding.notificationSwitch.isChecked = true
             scheduleWork(binding.updateIntervalInput.text.toString().toIntOrNull() ?: 30)
-            Snackbar.make(binding.root, "Benachrichtigungen aktiviert", Snackbar.LENGTH_SHORT).show()
+            Snackbar.make(binding.root, getString(R.string.notifications_enabled), Snackbar.LENGTH_SHORT).show()
         } else {
             prefs.edit().putBoolean("notifications_enabled", false).apply()
             binding.notificationSwitch.isChecked = false
             WorkManager.getInstance(this).cancelUniqueWork("order_check_work")
-            Snackbar.make(binding.root, "Benachrichtigungsberechtigung verweigert", Snackbar.LENGTH_SHORT).show()
+            Snackbar.make(binding.root, getString(R.string.notifications_permission_denied), Snackbar.LENGTH_SHORT).show()
         }
     }
 
@@ -47,7 +47,7 @@ class SettingsActivity : AppCompatActivity() {
 
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = "Einstellungen"
+        supportActionBar?.title = getString(R.string.settings_title)
 
         // Load saved settings
         val prefs = getSharedPreferences("settings", Context.MODE_PRIVATE)
@@ -61,7 +61,7 @@ class SettingsActivity : AppCompatActivity() {
             } else {
                 prefs.edit().putBoolean("notifications_enabled", false).apply()
                 WorkManager.getInstance(this).cancelUniqueWork("order_check_work")
-                Snackbar.make(binding.root, "Benachrichtigungen deaktiviert", Snackbar.LENGTH_SHORT).show()
+                Snackbar.make(binding.root, getString(R.string.notifications_disabled), Snackbar.LENGTH_SHORT).show()
             }
         }
 
@@ -70,10 +70,10 @@ class SettingsActivity : AppCompatActivity() {
             if (binding.notificationSwitch.isChecked) {
                 checkNotificationPermission {
                     notificationService.showOrderReadyNotification("304480", "2334")
-                    Snackbar.make(binding.root, "Test-Benachrichtigung gesendet", Snackbar.LENGTH_SHORT).show()
+                    Snackbar.make(binding.root, getString(R.string.test_notification_sent), Snackbar.LENGTH_SHORT).show()
                 }
             } else {
-                Snackbar.make(binding.root, "Bitte aktiviere zuerst die Benachrichtigungen", Snackbar.LENGTH_SHORT).show()
+                Snackbar.make(binding.root, getString(R.string.enable_notifications_first), Snackbar.LENGTH_SHORT).show()
             }
         }
 
@@ -89,7 +89,7 @@ class SettingsActivity : AppCompatActivity() {
                     scheduleWork(validInterval)
                     Snackbar.make(
                         binding.root,
-                        "Aktualisierungsintervall auf $validInterval Minuten gesetzt",
+                        getString(R.string.update_interval_set, validInterval),
                         Snackbar.LENGTH_SHORT
                     ).show()
                 }
@@ -107,7 +107,7 @@ class SettingsActivity : AppCompatActivity() {
                     onPermissionGranted()
                 }
                 else -> {
-                    Snackbar.make(binding.root, "Benachrichtigungsberechtigung erforderlich", Snackbar.LENGTH_SHORT).show()
+                    Snackbar.make(binding.root, getString(R.string.notifications_permission_required), Snackbar.LENGTH_SHORT).show()
                 }
             }
         } else {
@@ -128,7 +128,7 @@ class SettingsActivity : AppCompatActivity() {
                         .putBoolean("notifications_enabled", true)
                         .apply()
                     scheduleWork(binding.updateIntervalInput.text.toString().toIntOrNull() ?: 30)
-                    Snackbar.make(binding.root, "Benachrichtigungen aktiviert", Snackbar.LENGTH_SHORT).show()
+                    Snackbar.make(binding.root, getString(R.string.notifications_enabled), Snackbar.LENGTH_SHORT).show()
                 }
                 else -> {
                     // Request the permission
@@ -142,7 +142,7 @@ class SettingsActivity : AppCompatActivity() {
                 .putBoolean("notifications_enabled", true)
                 .apply()
             scheduleWork(binding.updateIntervalInput.text.toString().toIntOrNull() ?: 30)
-            Snackbar.make(binding.root, "Benachrichtigungen aktiviert", Snackbar.LENGTH_SHORT).show()
+            Snackbar.make(binding.root, getString(R.string.notifications_enabled), Snackbar.LENGTH_SHORT).show()
         }
     }
 
