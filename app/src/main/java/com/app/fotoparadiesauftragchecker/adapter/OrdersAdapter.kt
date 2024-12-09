@@ -22,9 +22,20 @@ class OrdersAdapter : ListAdapter<OrderStatus, OrdersAdapter.OrderViewHolder>(Or
     class OrderViewHolder(private val binding: ItemOrderBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(order: OrderStatus) {
             binding.orderNumberText.text = "Auftrag: ${order.orderNumber}"
-            binding.statusText.text = "Status: ${order.status}"
-            binding.priceText.text = "Preis: ${order.price}"
-            binding.lastUpdateText.text = "Letztes Update: ${order.lastUpdate}"
+            binding.shopNumberText.text = "Shop: ${order.retailerId}"
+            binding.statusChip.text = order.status
+            binding.priceText.text = order.price
+            binding.lastUpdateText.text = order.lastUpdate
+
+            // Set chip text color based on status code
+            val context = binding.root.context
+            val textColor = when (order.status.uppercase()) {
+                "DELIVERED" -> context.getColor(com.app.fotoparadiesauftragchecker.R.color.status_ready)
+                "PROCESSING" -> context.getColor(com.app.fotoparadiesauftragchecker.R.color.status_processing)
+                "WAITING", "PENDING" -> context.getColor(com.app.fotoparadiesauftragchecker.R.color.status_pending)
+                else -> context.getColor(com.app.fotoparadiesauftragchecker.R.color.status_error)
+            }
+            binding.statusChip.setTextColor(textColor)
         }
     }
 

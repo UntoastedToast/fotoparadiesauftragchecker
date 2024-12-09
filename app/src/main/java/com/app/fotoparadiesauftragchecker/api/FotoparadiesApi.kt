@@ -7,7 +7,7 @@ import retrofit2.http.Query
 interface FotoparadiesApi {
     @GET("spotapi/orderInfo/forShop")
     suspend fun getOrderStatus(
-        @Query("config") config: Int = 1320,
+        @Query("config") config: Int = OrderStatus.DEFAULT_CONFIG,
         @Query("shop") shop: Int,
         @Query("order") order: Int
     ): OrderStatus

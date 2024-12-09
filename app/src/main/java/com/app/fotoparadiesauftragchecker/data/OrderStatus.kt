@@ -10,5 +10,11 @@ data class OrderStatus(
     @SerializedName("summaryDate")
     val lastUpdate: String,
     @SerializedName("summaryPriceText")
-    val price: String
-)
+    val price: String,
+    var retailerId: String = "",  // Shop number
+    var orderName: String? = null // Custom order name, if set
+) {
+    companion object {
+        const val DEFAULT_CONFIG = 1320
+    }
+}

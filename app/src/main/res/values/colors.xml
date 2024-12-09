@@ -2,4 +2,10 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    
+    <!-- Order Status Colors -->
+    <color name="status_ready">#FF4CAF50</color>  <!-- Green -->
+    <color name="status_processing">#FF2196F3</color>  <!-- Blue -->
+    <color name="status_pending">#FFFFEB3B</color>  <!-- Yellow -->
+    <color name="status_error">#FFF44336</color>  <!-- Red -->
 </resources>

@@ -9,5 +9,6 @@ data class Order(
     val orderId: String,
     val status: String,
     val retailerId: String,
+    val orderName: String? = null,
     val timestamp: Long = System.currentTimeMillis()
 )
