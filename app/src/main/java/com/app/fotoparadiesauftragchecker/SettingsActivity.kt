@@ -1,13 +1,20 @@
 package com.app.fotoparadiesauftragchecker
 
 import android.Manifest
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
@@ -20,21 +27,26 @@ import java.util.concurrent.TimeUnit
 class SettingsActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySettingsBinding
     private lateinit var notificationService: NotificationService
+    
+    // Setzt das Ergebnis, das an die MainActivity zurückgegeben wird
+    private var settingsChanged = false
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         val prefs = getSharedPreferences("settings", Context.MODE_PRIVATE)
         if (isGranted) {
-            prefs.edit().putBoolean("notifications_enabled", true).apply()
+            prefs.edit { putBoolean("notifications_enabled", true) }
             binding.notificationSwitch.isChecked = true
             scheduleWork(binding.updateIntervalInput.text.toString().toIntOrNull() ?: 30)
             Snackbar.make(binding.root, getString(R.string.notifications_enabled), Snackbar.LENGTH_SHORT).show()
+            settingsChanged = true
         } else {
-            prefs.edit().putBoolean("notifications_enabled", false).apply()
+            prefs.edit { putBoolean("notifications_enabled", false) }
             binding.notificationSwitch.isChecked = false
             WorkManager.getInstance(this).cancelUniqueWork("order_check_work")
             Snackbar.make(binding.root, getString(R.string.notifications_permission_denied), Snackbar.LENGTH_SHORT).show()
+            settingsChanged = true
         }
     }
 
@@ -42,6 +54,12 @@ class SettingsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Edge-to-Edge aktivieren
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        
+        // Insets für das Layout verwalten
+        setupInsets()
 
         notificationService = NotificationService(this)
 
@@ -59,9 +77,10 @@ class SettingsActivity : AppCompatActivity() {
             if (isChecked) {
                 checkAndRequestNotificationPermission()
             } else {
-                prefs.edit().putBoolean("notifications_enabled", false).apply()
+                prefs.edit { putBoolean("notifications_enabled", false) }
                 WorkManager.getInstance(this).cancelUniqueWork("order_check_work")
                 Snackbar.make(binding.root, getString(R.string.notifications_disabled), Snackbar.LENGTH_SHORT).show()
+                settingsChanged = true
             }
         }
 
@@ -83,17 +102,33 @@ class SettingsActivity : AppCompatActivity() {
                 val interval = binding.updateIntervalInput.text.toString().toIntOrNull() ?: 30
                 val validInterval = interval.coerceIn(15, 180) // Zwischen 15 Minuten und 3 Stunden
                 binding.updateIntervalInput.setText(validInterval.toString())
-                prefs.edit().putInt("update_interval", validInterval).apply()
                 
-                if (binding.notificationSwitch.isChecked) {
-                    scheduleWork(validInterval)
-                    Snackbar.make(
-                        binding.root,
-                        getString(R.string.update_interval_set, validInterval),
-                        Snackbar.LENGTH_SHORT
-                    ).show()
+                // Wenn sich das Intervall geändert hat
+                if (prefs.getInt("update_interval", 30) != validInterval) {
+                    prefs.edit { putInt("update_interval", validInterval) }
+                    settingsChanged = true
+                    
+                    if (binding.notificationSwitch.isChecked) {
+                        scheduleWork(validInterval)
+                        Snackbar.make(
+                            binding.root,
+                            getString(R.string.update_interval_set, validInterval),
+                            Snackbar.LENGTH_SHORT
+                        ).show()
+                    }
                 }
             }
+        }
+    }
+
+    private fun setupInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, windowInsets ->
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            
+            // AppBar mit Statusbar-Insets ausrichten
+            binding.appBarLayout.updatePadding(top = insets.top)
+            
+            windowInsets
         }
     }
 
@@ -124,11 +159,12 @@ class SettingsActivity : AppCompatActivity() {
                 ) == PackageManager.PERMISSION_GRANTED -> {
                     // Permission is already granted, enable notifications
                     getSharedPreferences("settings", Context.MODE_PRIVATE)
-                        .edit()
-                        .putBoolean("notifications_enabled", true)
-                        .apply()
+                        .edit {
+                            putBoolean("notifications_enabled", true)
+                        }
                     scheduleWork(binding.updateIntervalInput.text.toString().toIntOrNull() ?: 30)
                     Snackbar.make(binding.root, getString(R.string.notifications_enabled), Snackbar.LENGTH_SHORT).show()
+                    settingsChanged = true
                 }
                 else -> {
                     // Request the permission
@@ -138,11 +174,12 @@ class SettingsActivity : AppCompatActivity() {
         } else {
             // For Android versions below 13, no runtime permission is needed
             getSharedPreferences("settings", Context.MODE_PRIVATE)
-                .edit()
-                .putBoolean("notifications_enabled", true)
-                .apply()
+                .edit {
+                    putBoolean("notifications_enabled", true)
+                }
             scheduleWork(binding.updateIntervalInput.text.toString().toIntOrNull() ?: 30)
             Snackbar.make(binding.root, getString(R.string.notifications_enabled), Snackbar.LENGTH_SHORT).show()
+            settingsChanged = true
         }
     }
 
@@ -159,8 +196,23 @@ class SettingsActivity : AppCompatActivity() {
         )
     }
 
+    override fun finish() {
+        // Setze das Ergebnis und signalisiere der MainActivity, dass ein Refresh erforderlich ist,
+        // wenn Einstellungen geändert wurden
+        if (settingsChanged) {
+            val resultIntent = Intent()
+            resultIntent.putExtra(SETTINGS_CHANGED, true)
+            setResult(Activity.RESULT_OK, resultIntent)
+        }
+        super.finish()
+    }
+
     override fun onSupportNavigateUp(): Boolean {
         onBackPressed()
         return true
+    }
+    
+    companion object {
+        const val SETTINGS_CHANGED = "settings_changed"
     }
 }
