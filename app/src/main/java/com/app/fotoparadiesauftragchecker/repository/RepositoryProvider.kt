@@ -1,10 +1,8 @@
 package com.app.fotoparadiesauftragchecker.repository
 
 import android.content.Context
-import com.app.fotoparadiesauftragchecker.api.FotoparadiesApi
+import com.app.fotoparadiesauftragchecker.api.ApiClient
 import com.app.fotoparadiesauftragchecker.data.AppDatabase
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 
 /**
  * Singleton-Klasse für den Zugriff auf Repositories.
@@ -22,12 +20,8 @@ object RepositoryProvider {
             val database = AppDatabase.getDatabase(context)
             val orderDao = database.orderDao()
             
-            val retrofit = Retrofit.Builder()
-                .baseUrl(FotoparadiesApi.BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
-            
-            val api = retrofit.create(FotoparadiesApi::class.java)
+            // Die zentrale API-Instanz aus ApiClient verwenden
+            val api = ApiClient.fotoparadiesApi
             
             orderRepository = OrderRepositoryImpl(api, orderDao)
         }

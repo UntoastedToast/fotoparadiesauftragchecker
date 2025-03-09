@@ -5,7 +5,7 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 interface FotoparadiesApi {
-    @GET("spotapi/orderInfo/forShop")
+    @GET("orderInfo/forShop")
     suspend fun getOrderStatus(
         @Query("config") config: Int = OrderStatus.DEFAULT_CONFIG,
         @Query("shop") shop: Int,
@@ -13,6 +13,6 @@ interface FotoparadiesApi {
     ): OrderStatus
 
     companion object {
-        const val BASE_URL = "https://spot.photoprintit.com/"
+        const val BASE_URL = "https://spot.photoprintit.com/spotapi/"
     }
 }
