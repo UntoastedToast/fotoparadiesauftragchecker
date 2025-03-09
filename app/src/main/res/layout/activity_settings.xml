@@ -5,6 +5,7 @@
     android:layout_height="match_parent">
 
     <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:theme="@style/Theme.FotoparadiesAuftragChecker.AppBarOverlay">
@@ -43,7 +44,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Benachrichtigungen"
+                        android:text="@string/notifications_section"
                         android:textAppearance="?attr/textAppearanceHeadline6" />
 
                     <com.google.android.material.switchmaterial.SwitchMaterial
@@ -51,7 +52,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Benachrichtigungen aktivieren" />
+                        android:text="@string/enable_notifications" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/testNotificationButton"
@@ -59,7 +60,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="Test-Benachrichtigung senden" />
+                        android:text="@string/send_test_notification" />
 
                 </LinearLayout>
 
@@ -79,7 +80,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Aktualisierung"
+                        android:text="@string/update_section"
                         android:textAppearance="?attr/textAppearanceHeadline6" />
 
                     <com.google.android.material.textfield.TextInputLayout
@@ -87,7 +88,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:hint="Aktualisierungsintervall (Minuten)">
+                        android:hint="@string/update_interval_hint">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/updateIntervalInput"
@@ -105,7 +106,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="Hinweis: Das minimale Aktualisierungsintervall beträgt 15 Minuten, um den Akkuverbrauch zu optimieren."
+                android:text="@string/update_interval_note"
                 android:textAppearance="?attr/textAppearanceCaption" />
 
         </LinearLayout>

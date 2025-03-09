@@ -10,7 +10,7 @@
         android:id="@+id/shopInputLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Filialnummer">
+        android:hint="@string/shop_number_hint">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/shopInput"
@@ -26,13 +26,29 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:hint="Auftragsnummer">
+        android:hint="@string/order_number_hint">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/orderInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="number" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:id="@+id/nameInputLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:hint="@string/order_name_hint">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/nameInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text" />
 
     </com.google.android.material.textfield.TextInputLayout>
 

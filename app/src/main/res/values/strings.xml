@@ -33,4 +33,33 @@
     <string name="notifications_permission_required">Benachrichtigungsberechtigung erforderlich</string>
     <string name="first_fragment_label">Aufträge</string>
     <string name="second_fragment_label">Auftragsdetails</string>
+    
+    <!-- Neue Strings für die MainActivity -->
+    <string name="loading_orders">Aufträge werden geladen…</string>
+    <string name="error_generic">Ein Fehler ist aufgetreten</string>
+    <string name="retry">Erneut versuchen</string>
+    <string name="empty_orders">Keine Aufträge vorhanden</string>
+    <string name="empty_orders_hint">Füge einen Auftrag hinzu, um ihn zu verfolgen</string>
+    <string name="add_order_fab">Auftrag hinzufügen</string>
+    
+    <!-- Neue Strings für das Settings Layout -->
+    <string name="notifications_section">Benachrichtigungen</string>
+    <string name="enable_notifications">Benachrichtigungen aktivieren</string>
+    <string name="send_test_notification">Test-Benachrichtigung senden</string>
+    <string name="update_section">Aktualisierung</string>
+    <string name="update_interval_hint">Aktualisierungsintervall (Minuten)</string>
+    <string name="update_interval_note">Hinweis: Das minimale Aktualisierungsintervall beträgt 15 Minuten, um den Akkuverbrauch zu optimieren.</string>
+    
+    <!-- Neue Strings für den Add-Order-Dialog -->
+    <string name="shop_number_hint">Filialnummer</string>
+    <string name="order_number_hint">Auftragsnummer</string>
+    <string name="order_name_hint">Auftragsname (optional)</string>
+    
+    <!-- Neue Strings für das Item-Layout -->
+    <string name="price_label">Preis</string>
+    <string name="last_update_label">Letztes Update</string>
+    
+    <!-- Format-Strings für den OrdersAdapter -->
+    <string name="order_number_format">Auftrag: %1$d</string>
+    <string name="shop_number_format">Shop: %1$s</string>
 </resources>

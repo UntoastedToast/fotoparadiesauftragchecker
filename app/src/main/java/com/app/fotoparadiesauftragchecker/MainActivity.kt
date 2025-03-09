@@ -1,6 +1,8 @@
 package com.app.fotoparadiesauftragchecker
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Canvas
@@ -10,10 +12,15 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -21,6 +28,7 @@ import com.app.fotoparadiesauftragchecker.adapter.OrdersAdapter
 import com.app.fotoparadiesauftragchecker.databinding.ActivityMainBinding
 import com.app.fotoparadiesauftragchecker.databinding.DialogAddOrderBinding
 import com.app.fotoparadiesauftragchecker.notification.NotificationService
+import com.app.fotoparadiesauftragchecker.ui.state.OrderUiState
 import com.app.fotoparadiesauftragchecker.viewmodel.OrderViewModel
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -51,11 +59,31 @@ class MainActivity : AppCompatActivity() {
             Snackbar.make(binding.root, R.string.permissions_required, Snackbar.LENGTH_LONG).show()
         }
     }
+    
+    // ActivityResultLauncher für die Settings-Activity
+    private val settingsLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            // Prüfen, ob Einstellungen geändert wurden
+            val settingsChanged = result.data?.getBooleanExtra(SettingsActivity.SETTINGS_CHANGED, false) ?: false
+            if (settingsChanged) {
+                // Wenn Einstellungen geändert wurden, Daten neu laden
+                viewModel.refreshOrders()
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Edge-to-Edge aktivieren
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        
+        // Insets für das Layout verwalten
+        setupInsets()
 
         notificationService = NotificationService(this)
         
@@ -63,9 +91,27 @@ class MainActivity : AppCompatActivity() {
         setupRecyclerView()
         setupSwipeRefresh()
         setupFab()
-        observeViewModel()
+        setupRetryButton()
+        setupObservers()
         
         checkAndRequestPermissions()
+    }
+
+    private fun setupInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, windowInsets ->
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            
+            // AppBar mit Statusbar-Insets ausrichten
+            binding.appBarLayout.updatePadding(top = insets.top)
+            
+            // FAB-Margin für die Navigationsleiste anpassen
+            val fabParams = binding.addOrderFab.layoutParams as androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams
+            val originalMargin = resources.getDimensionPixelSize(R.dimen.fab_margin)
+            fabParams.bottomMargin = originalMargin + insets.bottom
+            binding.addOrderFab.layoutParams = fabParams
+            
+            windowInsets
+        }
     }
 
     private fun setupRecyclerView() {
@@ -82,6 +128,7 @@ class MainActivity : AppCompatActivity() {
                 target: RecyclerView.ViewHolder
             ): Boolean = false
 
+            @SuppressLint("StringFormatMatches")
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val position = viewHolder.adapterPosition
                 val order = adapter.currentList[position]
@@ -95,10 +142,7 @@ class MainActivity : AppCompatActivity() {
                     getString(R.string.order_deleted, order.orderNumber),
                     Snackbar.LENGTH_LONG
                 ).setAction(getString(R.string.undo)) {
-                    viewModel.addOrder(
-                        order.retailerId.toInt(),
-                        order.orderNumber
-                    )
+                    viewModel.restoreOrder(order)
                 }.show()
             }
 
@@ -170,6 +214,12 @@ class MainActivity : AppCompatActivity() {
             showAddOrderDialog()
         }
     }
+    
+    private fun setupRetryButton() {
+        binding.retryButton.setOnClickListener {
+            viewModel.refreshOrders()
+        }
+    }
 
     private fun showAddOrderDialog() {
         val dialogBinding = DialogAddOrderBinding.inflate(LayoutInflater.from(this))
@@ -180,27 +230,58 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton(getString(R.string.add)) { _, _ ->
                 val shop = dialogBinding.shopInput.text.toString().toIntOrNull()
                 val order = dialogBinding.orderInput.text.toString().toIntOrNull()
+                val name = dialogBinding.nameInput.text.toString().takeIf { it.isNotBlank() }
 
                 if (shop == null || order == null) {
                     Snackbar.make(binding.root, getString(R.string.enter_valid_numbers), Snackbar.LENGTH_LONG).show()
                     return@setPositiveButton
                 }
 
-                viewModel.addOrder(shop, order)
+                viewModel.addOrder(shop, order, name)
             }
             .setNegativeButton(getString(R.string.cancel), null)
             .show()
     }
 
-    private fun observeViewModel() {
-        viewModel.orders.observe(this) { orders ->
-            adapter.submitList(orders)
-            binding.swipeRefreshLayout.isRefreshing = false
+    private fun setupObservers() {
+        // UI-State beobachten
+        viewModel.uiState.observe(this) { state ->
+            updateUiForState(state)
         }
-
-        viewModel.error.observe(this) { error ->
-            binding.swipeRefreshLayout.isRefreshing = false
-            Snackbar.make(binding.root, error, Snackbar.LENGTH_LONG).show()
+        
+        // Events beobachten (für Snackbar-Nachrichten)
+        viewModel.event.observe(this) { event ->
+            event.getContentIfNotHandled()?.let { message ->
+                Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
+            }
+        }
+    }
+    
+    private fun updateUiForState(state: OrderUiState) {
+        binding.swipeRefreshLayout.isRefreshing = false
+        
+        // Alle Views standardmäßig ausblenden
+        binding.ordersRecyclerView.visibility = View.GONE
+        binding.loadingView.visibility = View.GONE
+        binding.errorView.visibility = View.GONE
+        binding.emptyView.visibility = View.GONE
+        
+        // Je nach Zustand die passende View anzeigen
+        when (state) {
+            is OrderUiState.Loading -> {
+                binding.loadingView.visibility = View.VISIBLE
+            }
+            is OrderUiState.Success -> {
+                binding.ordersRecyclerView.visibility = View.VISIBLE
+                adapter.submitList(state.orders)
+            }
+            is OrderUiState.Error -> {
+                binding.errorView.visibility = View.VISIBLE
+                binding.errorTextView.text = state.message
+            }
+            is OrderUiState.Empty -> {
+                binding.emptyView.visibility = View.VISIBLE
+            }
         }
     }
 
@@ -224,7 +305,9 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_settings -> {
-                startActivity(Intent(this, SettingsActivity::class.java))
+                // SettingsActivity mit ActivityResultLauncher starten
+                val intent = Intent(this, SettingsActivity::class.java)
+                settingsLauncher.launch(intent)
                 true
             }
             else -> super.onOptionsItemSelected(item)
