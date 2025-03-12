@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.view.ViewCompat
@@ -34,7 +35,7 @@ class SettingsActivity : AppCompatActivity() {
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
-        val prefs = getSharedPreferences("settings", Context.MODE_PRIVATE)
+        val prefs = getSharedPreferences("settings", MODE_PRIVATE)
         if (isGranted) {
             prefs.edit { putBoolean("notifications_enabled", true) }
             binding.notificationSwitch.isChecked = true
@@ -68,9 +69,17 @@ class SettingsActivity : AppCompatActivity() {
         supportActionBar?.title = getString(R.string.settings_title)
 
         // Load saved settings
-        val prefs = getSharedPreferences("settings", Context.MODE_PRIVATE)
+        val prefs = getSharedPreferences("settings", MODE_PRIVATE)
         binding.notificationSwitch.isChecked = prefs.getBoolean("notifications_enabled", true)
         binding.updateIntervalInput.setText(prefs.getInt("update_interval", 30).toString())
+        
+        // Theme-Einstellung laden
+        val currentNightMode = prefs.getInt("night_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        when (currentNightMode) {
+            AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM -> binding.themeSystemRadio.isChecked = true
+            AppCompatDelegate.MODE_NIGHT_NO -> binding.themeLightRadio.isChecked = true
+            AppCompatDelegate.MODE_NIGHT_YES -> binding.themeDarkRadio.isChecked = true
+        }
 
         // Save settings when notification switch changes
         binding.notificationSwitch.setOnCheckedChangeListener { _, isChecked ->
@@ -119,6 +128,26 @@ class SettingsActivity : AppCompatActivity() {
                 }
             }
         }
+        
+        // Theme RadioGroup Listener
+        binding.themeRadioGroup.setOnCheckedChangeListener { _, checkedId ->
+            val nightMode = when (checkedId) {
+                R.id.themeSystemRadio -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+                R.id.themeLightRadio -> AppCompatDelegate.MODE_NIGHT_NO
+                R.id.themeDarkRadio -> AppCompatDelegate.MODE_NIGHT_YES
+                else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+            }
+            
+            // Aktuelle Einstellung abrufen
+            val currentNightMode = prefs.getInt("night_mode", AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+            
+            // Nur wenn sich die Einstellung geändert hat, aktualisieren
+            if (currentNightMode != nightMode) {
+                prefs.edit { putInt("night_mode", nightMode) }
+                AppCompatDelegate.setDefaultNightMode(nightMode)
+                settingsChanged = true
+            }
+        }
     }
 
     private fun setupInsets() {
@@ -158,7 +187,7 @@ class SettingsActivity : AppCompatActivity() {
                     Manifest.permission.POST_NOTIFICATIONS
                 ) == PackageManager.PERMISSION_GRANTED -> {
                     // Permission is already granted, enable notifications
-                    getSharedPreferences("settings", Context.MODE_PRIVATE)
+                    getSharedPreferences("settings", MODE_PRIVATE)
                         .edit {
                             putBoolean("notifications_enabled", true)
                         }
@@ -173,7 +202,7 @@ class SettingsActivity : AppCompatActivity() {
             }
         } else {
             // For Android versions below 13, no runtime permission is needed
-            getSharedPreferences("settings", Context.MODE_PRIVATE)
+            getSharedPreferences("settings", MODE_PRIVATE)
                 .edit {
                     putBoolean("notifications_enabled", true)
                 }
@@ -202,7 +231,7 @@ class SettingsActivity : AppCompatActivity() {
         if (settingsChanged) {
             val resultIntent = Intent()
             resultIntent.putExtra(SETTINGS_CHANGED, true)
-            setResult(Activity.RESULT_OK, resultIntent)
+            setResult(RESULT_OK, resultIntent)
         }
         super.finish()
     }

@@ -50,6 +50,13 @@
     <string name="update_interval_hint">Aktualisierungsintervall (Minuten)</string>
     <string name="update_interval_note">Hinweis: Das minimale Aktualisierungsintervall beträgt 15 Minuten, um den Akkuverbrauch zu optimieren.</string>
     
+    <!-- Strings für die Theme-Einstellungen -->
+    <string name="theme_section">Erscheinungsbild</string>
+    <string name="enable_dark_mode">Dunkles Design aktivieren</string>
+    <string name="theme_system">Systemeinstellung verwenden</string>
+    <string name="theme_light">Helles Design</string>
+    <string name="theme_dark">Dunkles Design</string>
+    
     <!-- Neue Strings für den Add-Order-Dialog -->
     <string name="shop_number_hint">Filialnummer</string>
     <string name="order_number_hint">Auftragsnummer</string>
